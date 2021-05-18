@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+    <title>Building an HTML Library with Python :: Branden Vennes</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="In this tutorial I will be walking through the development of my HTML builder Python package.
+The completed package is available at bvennes/html_builder on GitHub.
+Creating a Clientside Project With Python The purpose of the HTML builder is to programmatically create an HTML file using Python. In the future, however, I would like to make SCSS and JavaScript builders as well so that the entirety of a web application could be built using Python." />
+<meta name="keywords" content="" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="https://brandenvennes.com/posts/python-html/" />
+
+
+
+
+<link rel="stylesheet" href="https://brandenvennes.com/assets/style.css">
+
+  <link rel="stylesheet" href="https://brandenvennes.com/assets/pink.css">
+
+
+
+
+
+
+<link rel="apple-touch-icon" href="https://brandenvennes.com/img/apple-touch-icon-192x192.png">
+
+  <link rel="shortcut icon" href="https://brandenvennes.com/img/favicon/pink.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+  
+    <meta name="twitter:site" content="" />
+  
+    <meta name="twitter:creator" content="" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Building an HTML Library with Python">
+<meta property="og:description" content="In this tutorial I will be walking through the development of my HTML builder Python package.
+The completed package is available at bvennes/html_builder on GitHub.
+Creating a Clientside Project With Python The purpose of the HTML builder is to programmatically create an HTML file using Python. In the future, however, I would like to make SCSS and JavaScript builders as well so that the entirety of a web application could be built using Python." />
+<meta property="og:url" content="https://brandenvennes.com/posts/python-html/" />
+<meta property="og:site_name" content="Branden Vennes" />
+
+  
+    <meta property="og:image" content="https://brandenvennes.com/img/favicon/pink.png">
+  
+
+<meta property="og:image:width" content="2048">
+<meta property="og:image:height" content="1024">
+
+
+  <meta property="article:published_time" content="2020-03-09 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<body class="pink">
+
+
+<div class="container headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    Branden Vennes
+  </div>
+</a>
+
+    </div>
+    
+      <div class="menu-trigger">menu</div>
+    
+  </div>
+  
+    <nav class="menu">
+  <ul class="menu__inner menu__inner--desktop">
+    
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+        
+          <li><a href="/resume">Resume</a></li>
+        
+      
+      
+    
+
+    
+  </ul>
+
+  <ul class="menu__inner menu__inner--mobile">
+    
+      
+        <li><a href="/about">About</a></li>
+      
+    
+      
+        <li><a href="/resume">Resume</a></li>
+      
+    
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<div class="post">
+  <h1 class="post-title">
+    <a href="https://brandenvennes.com/posts/python-html/">Building an HTML Library with Python</a></h1>
+  <div class="post-meta">
+    
+      <span class="post-date">
+        2020-03-09 
+      </span>
+    
+    
+  </div>
+
+  
+
+  
+
+  
+
+  <div class="post-content"><div>
+        <p>In this tutorial I will be walking through the development of my HTML builder Python package.</p>
+<p>The completed package is available at <a href="https://github.com/b-vennes/html_builder">bvennes/html_builder</a> on GitHub.</p>
+<h2 id="creating-a-clientside-project-with-python">Creating a Clientside Project With Python<a href="#creating-a-clientside-project-with-python" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>The purpose of the HTML builder is to programmatically create an HTML file using Python. In the future, however, I would like to make SCSS and JavaScript builders as well so that the entirety of a web application could be built using Python.</p>
+<p>HTML is a good place to start because the structure of an HTML file is fairly simple. HTML tags look like <code>&lt;tag-name class=&quot;class-1 class-2&quot;&gt;&lt;/tag-name&gt;</code> and are nested to build out component hierarchies.</p>
+<p>An HTML tag can be broken down into 4 major components:</p>
+<ul>
+<li>name of the tag</li>
+<li>list of classes for the tag</li>
+<li>additional attributes like <code>onclick</code> or <code>style</code></li>
+<li>child tags or text</li>
+</ul>
+<h2 id="html-python-class">Html Python Class<a href="#html-python-class" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>To create an HTML tag in Python, I created a basic object called <code>Html</code> holding access to the HTML tag&rsquo;s name, class names, and attributes like <code>onclick: doSomething()</code>.</p>
+<p>It would also be possible for the classes list to be given as an attribute, since <code>class</code> is technically just an attribute, but this is a good opportunity to make use of Python&rsquo;s <code>*args</code> functionality.</p>
+<p>Here is what the initial code looked like for the Html object:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Html</span>:
+    <span style="color:#66d9ef">def</span> __init__(self, tag_name, <span style="color:#f92672">*</span>class_names, <span style="color:#f92672">**</span>attributes):
+        <span style="color:#e6db74">&#34;&#34;&#34;Initializes a new html tag.&#34;&#34;&#34;</span>
+        self<span style="color:#f92672">.</span>name <span style="color:#f92672">=</span> tag_name
+        self<span style="color:#f92672">.</span>class_names <span style="color:#f92672">=</span> list(class_names)
+        self<span style="color:#f92672">.</span>attributes <span style="color:#f92672">=</span> attributes
+        self<span style="color:#f92672">.</span>children <span style="color:#f92672">=</span> []
+</code></pre></div><h2 id="render-method">Render Method<a href="#render-method" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>In order to output the Html object as a string, I added a <code>render</code> method.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">render</span>(self):
+        <span style="color:#e6db74">&#34;&#34;&#34;Renders the html tag as a string.&#34;&#34;&#34;</span>
+        html <span style="color:#f92672">=</span> f<span style="color:#e6db74">&#39;&lt;{self.name}&#39;</span>
+
+        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>class_names<span style="color:#f92672">.</span>__len__() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+            classes_list <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39; &#39;</span><span style="color:#f92672">.</span>join(self<span style="color:#f92672">.</span>class_names)
+            html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39; class=&#34;{classes_list}&#34;&#39;</span>
+
+        <span style="color:#66d9ef">for</span> key, value <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>attributes<span style="color:#f92672">.</span>items():
+            html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39; {key}=&#34;{value}&#34;&#39;</span>
+
+        html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39;&gt;&lt;/{self.name}&gt;&#39;</span>
+
+        <span style="color:#66d9ef">return</span> html
+</code></pre></div><p>To render the HTML tag as a string, we maintain an html element that begins with <code>&lt;self.name</code>, add the classes as a list separated by a space, add the sets of attribute key/value pairs, and finally close it off with <code>&gt;&lt;/self.name&gt;</code>.</p>
+<p>With both the <code>__init__</code> and <code>render</code> methods completed, the <code>Html</code> class looks like:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Html</span>:
+    <span style="color:#66d9ef">def</span> __init__(self, tag_name, <span style="color:#f92672">*</span>class_names, <span style="color:#f92672">**</span>attributes):
+        <span style="color:#e6db74">&#34;&#34;&#34;Initializes a new html tag.&#34;&#34;&#34;</span>
+        self<span style="color:#f92672">.</span>name <span style="color:#f92672">=</span> tag_name
+        self<span style="color:#f92672">.</span>class_names <span style="color:#f92672">=</span> list(class_names)
+        self<span style="color:#f92672">.</span>attributes <span style="color:#f92672">=</span> attributes
+        self<span style="color:#f92672">.</span>children <span style="color:#f92672">=</span> []
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">render</span>(self):
+        <span style="color:#e6db74">&#34;&#34;&#34;Renders the html tag as a string.&#34;&#34;&#34;</span>
+        html <span style="color:#f92672">=</span> f<span style="color:#e6db74">&#39;&lt;{self.name}&#39;</span>
+
+        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>class_names<span style="color:#f92672">.</span>__len__() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+            classes_list <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39; &#39;</span><span style="color:#f92672">.</span>join(self<span style="color:#f92672">.</span>class_names)
+            html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39; class=&#34;{classes_list}&#34;&#39;</span>
+
+        <span style="color:#66d9ef">for</span> key, value <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>attributes<span style="color:#f92672">.</span>items():
+            html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39; {key}=&#34;{value}&#34;&#39;</span>
+
+        html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39;&gt;&lt;/{self.name}&gt;&#39;</span>
+
+        <span style="color:#66d9ef">return</span> html
+</code></pre></div><h2 id="html-class-testing">Html Class Testing<a href="#html-class-testing" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>Before testing this class out, let&rsquo;s setup the full <code>html_builder</code> Python package.</p>
+<p>First, create a new directory called <em>html_builder</em>.</p>
+<p>Add a blank file within this directory called __init__.py</p>
+<p>Add a subdirectory to <em>html_builder</em> also called <em>html_builder</em>.</p>
+<p>Within the <em>html_builder</em> subdirectory, add a file named <em>html.py</em> and copy the <code>Html</code> class from above.</p>
+<p>Then, create a test script in the same folder as the top-level <em>html_builder</em> directory named <em>html_test.py</em>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># html_test.py</span>
+<span style="color:#f92672">from</span> html_builder.html <span style="color:#f92672">import</span> Html
+
+button <span style="color:#f92672">=</span> Html(<span style="color:#e6db74">&#39;button&#39;</span>, <span style="color:#e6db74">&#39;class-1&#39;</span>, <span style="color:#e6db74">&#39;class-2&#39;</span>, onclick<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;alert(&#39;Hello world!&#39;)&#34;</span>)
+
+<span style="color:#66d9ef">print</span>(button<span style="color:#f92672">.</span>render())
+
+</code></pre></div><p>The output of this Python script should be <code>&lt;button class=&quot;class-1 class-2&quot; onclick=&quot;alert('Hello world!')&quot;&gt;&lt;/button&gt;</code>. Let&rsquo;s copy this to a file named <em>button.html</em> and open it in a web browser. We should see a tiny button with no text. If we click on it, the window alerts us with the message <code>Hello world!</code>. That&rsquo;s a promising start!</p>
+<p>But users will want to be able to add text to their button. In order to do this, we want our button to be able to contain some child elements, like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#f92672">button</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;class-1 class-2&#34;</span> <span style="color:#a6e22e">onclick</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;alert(&#39;Hello world!&#39;)&#34;</span>&gt;
+    Click me!
+&lt;/<span style="color:#f92672">button</span>&gt;
+</code></pre></div><h2 id="html-children">Html Children<a href="#html-children" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>Let&rsquo;s add a child element to our button.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">button <span style="color:#f92672">=</span> Html(<span style="color:#e6db74">&#39;button&#39;</span>, onclick<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;alert(&#39;Hello world!&#39;)&#34;</span>)
+button<span style="color:#f92672">.</span>children <span style="color:#f92672">+=</span> [<span style="color:#e6db74">&#39;Click me!&#39;</span>]
+</code></pre></div><p>However, our render method isn&rsquo;t rendering any of our children, so let&rsquo;s fix that by adding a method called <code>render_children()</code>. We will make it a private method so that we can encapsulate any additional logic that might occur while rendering the tag&rsquo;s children. To make the method private, add <code>__</code> before the method name.</p>
+<p>This is also a good time to make the HTML format nicely when printed using newline characters and spaces.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">__render_children</span>(self):
+    <span style="color:#e6db74">&#34;&#34;&#34;Renders the tag&#39;s children&#34;&#34;&#34;</span>
+    rendered_children <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;</span>
+
+    <span style="color:#66d9ef">for</span> child <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>children:
+        rendered_children <span style="color:#f92672">+=</span> <span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">    &#39;</span>
+        <span style="color:#66d9ef">if</span> type(child) <span style="color:#f92672">is</span> Html:
+            rendered_children <span style="color:#f92672">+=</span> child<span style="color:#f92672">.</span>render()<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#39;</span>,<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">    &#39;</span>)
+        <span style="color:#66d9ef">else</span>:
+            rendered_children <span style="color:#f92672">+=</span> child
+    
+    rendered_children <span style="color:#f92672">+=</span> <span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#39;</span>
+    
+    <span style="color:#66d9ef">return</span> rendered_children
+</code></pre></div><p>Let&rsquo;s also modify the <code>render</code> to use the new private method.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">render</span>(self):
+    <span style="color:#e6db74">&#34;&#34;&#34;Renders the html tag as a string.&#34;&#34;&#34;</span>
+    html <span style="color:#f92672">=</span> f<span style="color:#e6db74">&#39;&lt;{self.name}&#39;</span>
+
+    <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>class_names<span style="color:#f92672">.</span>__len__() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+        classes_list <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39; &#39;</span><span style="color:#f92672">.</span>join(self<span style="color:#f92672">.</span>class_names)
+        html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39; class=&#34;{classes_list}&#34;&#39;</span>
+        
+    <span style="color:#66d9ef">for</span> key, value <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>attributes<span style="color:#f92672">.</span>items():
+        html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39; {key}=&#34;{value}&#34;&#39;</span>
+
+    rendered_children <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>__render_children()
+
+    html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39;&gt;{rendered_children}&lt;/{self.name}&gt;&#39;</span>
+
+    <span style="color:#66d9ef">return</span> html
+</code></pre></div><p>The <code>Html</code> class should now look like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># html.py</span>
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Html</span>:
+    <span style="color:#66d9ef">def</span> __init__(self, tag_name, <span style="color:#f92672">*</span>class_names, <span style="color:#f92672">**</span>attributes):
+        <span style="color:#e6db74">&#34;&#34;&#34;Initializes a new html tag.&#34;&#34;&#34;</span>
+        self<span style="color:#f92672">.</span>name <span style="color:#f92672">=</span> tag_name
+        self<span style="color:#f92672">.</span>class_names <span style="color:#f92672">=</span> list(class_names)
+        self<span style="color:#f92672">.</span>attributes <span style="color:#f92672">=</span> attributes
+        self<span style="color:#f92672">.</span>children <span style="color:#f92672">=</span> []
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">render</span>(self):
+        <span style="color:#e6db74">&#34;&#34;&#34;Renders the html tag as a string.&#34;&#34;&#34;</span>
+        html <span style="color:#f92672">=</span> f<span style="color:#e6db74">&#39;&lt;{self.name}&#39;</span>
+
+        <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>class_names<span style="color:#f92672">.</span>__len__() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+            classes_list <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39; &#39;</span><span style="color:#f92672">.</span>join(self<span style="color:#f92672">.</span>class_names)
+            html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39; class=&#34;{classes_list}&#34;&#39;</span>
+            
+        <span style="color:#66d9ef">for</span> key, value <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>attributes<span style="color:#f92672">.</span>items():
+            html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39; {key}=&#34;{value}&#34;&#39;</span>
+
+        rendered_children <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>__render_children()
+
+        html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39;&gt;{rendered_children}&lt;/{self.name}&gt;&#39;</span>
+
+        <span style="color:#66d9ef">return</span> html
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">__render_children</span>(self):
+        <span style="color:#e6db74">&#34;&#34;&#34;Renders the tag&#39;s children&#34;&#34;&#34;</span>
+        rendered_children <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;</span>
+
+        <span style="color:#66d9ef">for</span> child <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>children:
+            rendered_children <span style="color:#f92672">+=</span> <span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">    &#39;</span>
+            <span style="color:#66d9ef">if</span> type(child) <span style="color:#f92672">is</span> Html:
+                rendered_children <span style="color:#f92672">+=</span> child<span style="color:#f92672">.</span>render()<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#39;</span>,<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">    &#39;</span>)
+            <span style="color:#66d9ef">else</span>:
+                rendered_children <span style="color:#f92672">+=</span> child
+        
+        rendered_children <span style="color:#f92672">+=</span> <span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#39;</span>
+        
+        <span style="color:#66d9ef">return</span> rendered_children
+</code></pre></div><p>Looks good! Now we&rsquo;ll want to update our test script to make use of the new functionality. I&rsquo;ve added <code>div</code> and <code>title</code> elements to test out nested HTML.</p>
+<h2 id="testing-child-html-tags">Testing Child HTML Tags<a href="#testing-child-html-tags" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># html_test.py</span>
+<span style="color:#f92672">from</span> html_builder.html_builder.html <span style="color:#f92672">import</span> Html
+
+div <span style="color:#f92672">=</span> Html(<span style="color:#e6db74">&#39;div&#39;</span>)
+
+title <span style="color:#f92672">=</span> Html(<span style="color:#e6db74">&#39;h1&#39;</span>)
+
+button <span style="color:#f92672">=</span> Html(<span style="color:#e6db74">&#39;button&#39;</span>, onclick<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;alert(&#39;Hello world!&#39;)&#34;</span>)
+
+button<span style="color:#f92672">.</span>children <span style="color:#f92672">+=</span> [<span style="color:#e6db74">&#39;Click me!&#39;</span>]
+title<span style="color:#f92672">.</span>children <span style="color:#f92672">+=</span> [<span style="color:#e6db74">&#39;HTML Builder Test&#39;</span>]
+div<span style="color:#f92672">.</span>children <span style="color:#f92672">+=</span> [title, button]
+
+<span style="color:#66d9ef">print</span>(div<span style="color:#f92672">.</span>render())
+</code></pre></div><p>After running the <em>html_test.py</em> script we should see the output</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#f92672">div</span>&gt;
+    &lt;<span style="color:#f92672">h1</span>&gt;
+        HTML Builder Test
+    &lt;/<span style="color:#f92672">h1</span>&gt;
+    &lt;<span style="color:#f92672">button</span> <span style="color:#a6e22e">onclick</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;alert(&#39;Hello world!&#39;)&#34;</span>&gt;
+        Click me!
+    &lt;/<span style="color:#f92672">button</span>&gt;
+&lt;/<span style="color:#f92672">div</span>&gt;
+</code></pre></div><p>After copying the output to <em>test.html</em> and reloading the browser, it should show our title and a button that says &lsquo;Click me!&rsquo;.</p>
+<h2 id="rendering-to-an-html-file">Rendering to an HTML File<a href="#rendering-to-an-html-file" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>At this point, our builder is just about done. But it might be helpful for our users to render HTML directly into a file. So I&rsquo;ve added an <code>output_file</code> parameter to the <code>render</code> method so that users can specify a path where the rendered HTML should go. Before returning the HTML as a string, I&rsquo;ve also added a section for opening the file if it is given, writing to it, and closing it.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">render</span>(self, output_file_path<span style="color:#f92672">=</span>None):
+    <span style="color:#e6db74">&#34;&#34;&#34;Renders the html tag as a string.&#34;&#34;&#34;</span>
+    html <span style="color:#f92672">=</span> f<span style="color:#e6db74">&#39;&lt;{self.name}&#39;</span>
+
+    <span style="color:#66d9ef">if</span> self<span style="color:#f92672">.</span>class_names<span style="color:#f92672">.</span>__len__() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+        classes_list <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39; &#39;</span><span style="color:#f92672">.</span>join(self<span style="color:#f92672">.</span>class_names)
+        html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39; class=&#34;{classes_list}&#34;&#39;</span>
+        
+    <span style="color:#66d9ef">for</span> key, value <span style="color:#f92672">in</span> self<span style="color:#f92672">.</span>attributes<span style="color:#f92672">.</span>items():
+        html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39; {key}=&#34;{value}&#34;&#39;</span>
+
+    rendered_children <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>__render_children()
+
+    html <span style="color:#f92672">+=</span> f<span style="color:#e6db74">&#39;&gt;{rendered_children}&lt;/{self.name}&gt;&#39;</span>
+
+    <span style="color:#66d9ef">if</span> output_file_path <span style="color:#f92672">!=</span> None:
+        output_file <span style="color:#f92672">=</span> open(output_file_path, <span style="color:#e6db74">&#39;w&#39;</span>)
+        output_file<span style="color:#f92672">.</span>write(html)
+        output_file<span style="color:#f92672">.</span>close()
+
+    <span style="color:#66d9ef">return</span> html
+</code></pre></div><p>To verify this behavior works correctly, I&rsquo;ve specified the output file in the test script.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> html_builder.html_builder.html <span style="color:#f92672">import</span> Html
+
+div <span style="color:#f92672">=</span> Html(<span style="color:#e6db74">&#39;div&#39;</span>)
+
+title <span style="color:#f92672">=</span> Html(<span style="color:#e6db74">&#39;h1&#39;</span>)
+
+button <span style="color:#f92672">=</span> Html(<span style="color:#e6db74">&#39;button&#39;</span>, onclick<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;alert(&#39;Hello world!&#39;)&#34;</span>)
+
+button<span style="color:#f92672">.</span>children <span style="color:#f92672">+=</span> [<span style="color:#e6db74">&#39;Click me!&#39;</span>]
+title<span style="color:#f92672">.</span>children <span style="color:#f92672">+=</span> [<span style="color:#e6db74">&#39;HTML Builder Test&#39;</span>]
+div<span style="color:#f92672">.</span>children <span style="color:#f92672">+=</span> [title, button]
+
+<span style="color:#66d9ef">print</span>(div<span style="color:#f92672">.</span>render(<span style="color:#e6db74">&#39;./test.html&#39;</span>))
+</code></pre></div><p>Now when we run the script, the HTML is printed to both the output terminal and the <em>test.html</em> file. Neat!</p>
+
+      </div></div>
+
+  
+  
+  
+
+  
+
+</div>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2021 Powered by <a href="http://gohugo.io">Hugo</a></span>
+    
+        <span>:: Theme made by <a href="https://twitter.com/panr">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+<script src="https://brandenvennes.com/assets/main.js"></script>
+<script src="https://brandenvennes.com/assets/prism.js"></script>
+
+
+
+
+
+
+
+  
+</div>
+
+</body>
+</html>
