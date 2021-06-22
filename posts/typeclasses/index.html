@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+    <title>Typeclasses and Ad-Hoc Polymorphism :: Branden Vennes</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Typeclasses are a construct for declaring categorical behavior on types in the Haskell programming language, however, the concept is not restricted to just Haskell. The typeclass is an implementation of ad-hoc polymorphism, which unlike with interface or class inheritance, allows us to define polymorphic behavior on the fly.
+Typeclasses provide an abstraction by defining interfaces and the values that implement them. In most object-oriented languages, interfaces are defined using direct inheritance from a child type to a parent type." />
+<meta name="keywords" content="" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="https://brandenvennes.com/posts/typeclasses/" />
+
+
+
+
+<link rel="stylesheet" href="https://brandenvennes.com/assets/style.css">
+
+  <link rel="stylesheet" href="https://brandenvennes.com/assets/pink.css">
+
+
+
+
+
+
+<link rel="apple-touch-icon" href="https://brandenvennes.com/img/apple-touch-icon-192x192.png">
+
+  <link rel="shortcut icon" href="https://brandenvennes.com/img/favicon/pink.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+  
+    <meta name="twitter:site" content="" />
+  
+    <meta name="twitter:creator" content="" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Typeclasses and Ad-Hoc Polymorphism">
+<meta property="og:description" content="Typeclasses are a construct for declaring categorical behavior on types in the Haskell programming language, however, the concept is not restricted to just Haskell. The typeclass is an implementation of ad-hoc polymorphism, which unlike with interface or class inheritance, allows us to define polymorphic behavior on the fly.
+Typeclasses provide an abstraction by defining interfaces and the values that implement them. In most object-oriented languages, interfaces are defined using direct inheritance from a child type to a parent type." />
+<meta property="og:url" content="https://brandenvennes.com/posts/typeclasses/" />
+<meta property="og:site_name" content="Branden Vennes" />
+
+  
+    <meta property="og:image" content="https://brandenvennes.com/img/favicon/pink.png">
+  
+
+<meta property="og:image:width" content="2048">
+<meta property="og:image:height" content="1024">
+
+
+  <meta property="article:published_time" content="2021-06-22 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<body class="pink">
+
+
+<div class="container headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    Branden Vennes
+  </div>
+</a>
+
+    </div>
+    
+      <div class="menu-trigger">menu</div>
+    
+  </div>
+  
+    <nav class="menu">
+  <ul class="menu__inner menu__inner--desktop">
+    
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+        
+          <li><a href="/resume">Resume</a></li>
+        
+      
+      
+    
+
+    
+  </ul>
+
+  <ul class="menu__inner menu__inner--mobile">
+    
+      
+        <li><a href="/about">About</a></li>
+      
+    
+      
+        <li><a href="/resume">Resume</a></li>
+      
+    
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<div class="post">
+  <h1 class="post-title">
+    <a href="https://brandenvennes.com/posts/typeclasses/">Typeclasses and Ad-Hoc Polymorphism</a></h1>
+  <div class="post-meta">
+    
+      <span class="post-date">
+        2021-06-22 
+      </span>
+    
+    
+  </div>
+
+  
+  <span class="post-tags">
+    
+    #<a href="https://brandenvennes.com/tags/functional-programming/">Functional-Programming</a>&nbsp;
+    
+    #<a href="https://brandenvennes.com/tags/scala/">Scala</a>&nbsp;
+    
+    #<a href="https://brandenvennes.com/tags/software-architecture/">Software-Architecture</a>&nbsp;
+    
+  </span>
+  
+
+  
+
+  
+
+  <div class="post-content"><div>
+        <p>Typeclasses are a construct for declaring categorical behavior on types in the Haskell programming language, however,
+the concept is not restricted to just Haskell.  The typeclass is an implementation of ad-hoc polymorphism, which
+unlike with interface or class inheritance, allows us to define polymorphic behavior on the fly.</p>
+<p>Typeclasses provide an abstraction by defining interfaces and the <em>values</em> that implement them.  In most
+object-oriented languages, interfaces are defined using direct inheritance from a child type to a parent type.
+Instead of operating on the class level, typeclasses define an interface, then instantiate the implementation in the
+form of a value.  This allows flexibility with interface implementation, since the typeclass instances can be
+interchanged through function parameters and package imports. With typeclasses, library consumers have the ability to
+extend the functionality of types without modifying the source.</p>
+<p>A typeclass consists of some generic interface and an implementation for a particular type.  The type can be any
+representation of a value (ex. <code>int</code>, <code>String</code>, <code>Person</code>, <code>Vehicle</code>&hellip;) and the value itself can be anything.  The most
+important part of a typeclass is that the implementation exists seperately from the implementation of the value itself
+and can be used like a value.</p>
+<h3 id="typeclass-implementations-across-languages">Typeclass Implementations Across Languages<a href="#typeclass-implementations-across-languages" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>For the following implementation examples, we will be implementing the
+<a href="https://typelevel.org/cats/typeclasses/semigroup.html">Semigroup</a> typeclass on <code>int</code>, <code>string</code>, and <code>list</code> types.</p>
+<p>Semigroup defines a single <code>combine</code> function that takes two instances of type <code>T</code> as inputs and outputs their combined
+value.</p>
+<p>For example, calling <code>combine</code> with the integers <code>4</code> and <code>6</code> should return <code>10</code> if we are using addition as the
+<code>combine</code> implementation (we could also implement this for multiplication).</p>
+<p>As an example of how typeclasses can be used within a library, I&rsquo;ll also be creating a function <code>applyTo</code> that will
+combine each value in a list with a given value. For the input <code>List(1, 2, 3, 4, 5)</code>, <code>applyTo</code> with a value of <code>8</code>
+would return <code>List(9, 10, 11, 12, 13)</code>.</p>
+<p>It is an implicit requirement that a <code>Semigroup</code>&rsquo;s combine operation also be associative: combining a
+group of values can occur in any order as in <code>(1 + 2) + 3 = 1 + (2 + 3)</code>. However, this is not a possible restriction in
+most programming languages, so it will not be factored into these examples.</p>
+<h4 id="scala">Scala<a href="#scala" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>Although there is not first-class support for typeclasses in Scala, there are language constructs to help create them.</p>
+<p>We first create a trait representing our <code>Semigroup</code> typeclass, then create a typeclass instance representing integer
+addition, and finally create a function which implicitly takes a typeclass instance as a parameter.  The <code>implicit</code>
+keyword in Scala 2 lets us create a value in the implicit scope and summon it when the typeclass is requested.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala">
+<span style="color:#66d9ef">trait</span> <span style="color:#a6e22e">Semigroup</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">def</span> combine<span style="color:#f92672">(</span>a<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">,</span> b<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span>
+<span style="color:#f92672">}</span>
+
+<span style="color:#66d9ef">implicit</span> <span style="color:#66d9ef">val</span> intAdditionSemigroup<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Semigroup</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>a<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">,</span> b<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> a <span style="color:#f92672">+</span> b
+
+<span style="color:#66d9ef">def</span> applyTo<span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">](</span>values<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">],</span> value<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">A</span><span style="color:#f92672">)(</span><span style="color:#66d9ef">implicit</span> semigroup<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Semigroup</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span>
+    values<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>v <span style="color:#66d9ef">=&gt;</span> semigroup<span style="color:#f92672">.</span>combine<span style="color:#f92672">(</span>v<span style="color:#f92672">,</span> value<span style="color:#f92672">))</span>
+
+applyTo<span style="color:#f92672">(</span><span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">3</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">4</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">5</span><span style="color:#f92672">),</span> <span style="color:#ae81ff">8</span><span style="color:#f92672">)</span>
+
+</code></pre></div><h4 id="c">C#<a href="#c" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>Typeclasses in C# require some creativity because anonymous objects aren&rsquo;t a thing.  To access typeclass instances, we
+will provide an <code>instance</code> static method which returns a singleton typeclass instance.  Although this will make it
+difficult to use the <code>Semigroup&lt;T&gt;</code> typeclass in a generic context, it makes the code a little bit neater.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> Semigroup&lt;T&gt;
+{
+    T Combine(T a, T b);
+}
+
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">IntAdditionSemigroup</span> : Semigroup&lt;<span style="color:#66d9ef">int</span>&gt;
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> IntSemigroup instance = <span style="color:#66d9ef">new</span> IntSemigroup();
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> Combine(<span style="color:#66d9ef">int</span> a, <span style="color:#66d9ef">int</span> b) = a + b;
+}
+
+<span style="color:#66d9ef">public</span> List&lt;T&gt; ApplyTo&lt;T&gt;(Semigroup&lt;T&gt; instance, List&lt;T&gt; values, T <span style="color:#66d9ef">value</span>)
+{
+    <span style="color:#66d9ef">return</span> values.Select(v =&gt; instance.combine(v, <span style="color:#66d9ef">value</span>));
+}
+
+ApplyTo(IntAdditionSemigroup.instance, <span style="color:#66d9ef">new</span> List&lt;<span style="color:#66d9ef">int</span>&gt; { <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">5</span> }, <span style="color:#ae81ff">8</span>);
+</code></pre></div><p>Note that because C# has no equivalent of the implicit scope found in Scala, the semigroup instance must be provided
+directly to the <code>ApplyTo</code> function.</p>
+<h4 id="typescript">Typescript<a href="#typescript" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>Typescript&rsquo;s implementation is a little neater, but also requires passing the semigroup instance directly because an
+<code>implicit</code> scope doesn&rsquo;t exist. Typescript <em>does</em> support instantiating anonymous objects, which makes creating the
+typeclass instances simple.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Typescript" data-lang="Typescript"><span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">Semigroup</span>&lt;<span style="color:#f92672">T</span>&gt; {
+    <span style="color:#a6e22e">combine</span>(<span style="color:#a6e22e">a</span>: <span style="color:#66d9ef">T</span>, <span style="color:#a6e22e">b</span>: <span style="color:#66d9ef">T</span>)<span style="color:#f92672">:</span> <span style="color:#a6e22e">T</span>
+}
+
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">numberAdditionSemigroup</span> <span style="color:#f92672">=</span> {
+    <span style="color:#a6e22e">combine</span>(<span style="color:#a6e22e">a</span>: <span style="color:#66d9ef">number</span>, <span style="color:#a6e22e">b</span>: <span style="color:#66d9ef">number</span>)<span style="color:#f92672">:</span> <span style="color:#66d9ef">number</span> {
+        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">a</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">b</span>
+    }
+} <span style="color:#66d9ef">as</span> <span style="color:#a6e22e">Semigroup</span>&lt;<span style="color:#f92672">number</span>&gt;
+
+<span style="color:#66d9ef">function</span> <span style="color:#a6e22e">combineAll</span>&lt;<span style="color:#f92672">T</span>&gt;(<span style="color:#a6e22e">instance</span>: <span style="color:#66d9ef">Semigroup</span>&lt;<span style="color:#f92672">T</span>&gt;, <span style="color:#a6e22e">values</span>: <span style="color:#66d9ef">T</span>[], <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">T</span>)<span style="color:#f92672">:</span> <span style="color:#a6e22e">T</span>[] {
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">values</span>.<span style="color:#a6e22e">map</span>(<span style="color:#a6e22e">v</span> <span style="color:#f92672">=&gt;</span> <span style="color:#a6e22e">instance</span>.<span style="color:#a6e22e">combine</span>(<span style="color:#a6e22e">v</span>, <span style="color:#a6e22e">value</span>))
+}
+
+<span style="color:#a6e22e">combineAll</span>(<span style="color:#a6e22e">numberAdditionSemigroup</span>, [<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">5</span>], <span style="color:#ae81ff">8</span>)
+</code></pre></div><h4 id="rust">Rust<a href="#rust" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>Rust supports Ad-Hoc polymorphism out of the box since the implementation of interfaces for types must be defined
+separately from the types themselves.  The <code>trait</code> implementations in Rust act just like typeclass definitions with an
+accompying <code>impl</code> block for instance definitions.</p>
+<p>I&rsquo;ve made the <code>Semigroup</code> typeclass receive the values <code>a</code> and <code>b</code> by reference so that we don&rsquo;t have to take ownership
+of the values, which makes it easier to work with.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Rust" data-lang="Rust"><span style="color:#66d9ef">trait</span> Semigroup {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">combine</span>(a: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>, b: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>) -&gt; <span style="color:#a6e22e">Self</span>;
+}
+
+<span style="color:#66d9ef">impl</span> Semigroup <span style="color:#66d9ef">for</span> <span style="color:#66d9ef">i32</span> {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">combine</span>(a: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">i32</span>, b: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">i32</span>) -&gt; <span style="color:#66d9ef">i32</span> {
+        a <span style="color:#f92672">+</span> b
+    }
+}
+
+<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">apply_to</span><span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>(values: Vec<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>, value: <span style="color:#a6e22e">T</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">where</span> T: <span style="color:#a6e22e">Semigroup</span> {
+    values.iter().map(<span style="color:#f92672">|</span>v<span style="color:#f92672">|</span> { T::combine(<span style="color:#f92672">&amp;</span>v, <span style="color:#f92672">&amp;</span>value) } ).collect()
+}
+
+apply_to(vec<span style="color:#f92672">!</span>[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">5</span>], <span style="color:#ae81ff">8</span>)
+</code></pre></div><p>We do not have the option to provide multiple implementations of <code>Semigroup</code> for <code>i32</code> within the same scope, so any
+additional implementations of <code>combine</code> (multiplication) would have to be placed in a separate scope and imported.</p>
+<h3 id="helpful-typeclasses">Helpful Typeclasses<a href="#helpful-typeclasses" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>There are a number of common typeclasses that can be combined to implement similar behavior across all implementing
+types.  <code>Semigroup</code>, <code>Eq</code>, and <code>Show</code> are simple typeclasses, but more complex ones like <code>Monoid</code>, <code>Monad</code>, and
+<code>Functor</code> can provide a lot of additional functionality.</p>
+<p>I will be implmenting the following examples with Scala, but symmetric implementations can be made for C#, Typescript,
+and Rust using the methods outlined in our <code>Semigroup</code> example.</p>
+<h4 id="eq">Eq<a href="#eq" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p><code>Eq</code> provides a typesafe equals method <code>eqv</code>.  <code>Eq</code> should be used when we want to check that the value of two
+values with the same type is the same.  Calling <code>eqv</code> with two values of different types should fail to compile.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">trait</span> <span style="color:#a6e22e">Eq</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">def</span> eqv<span style="color:#f92672">(</span>a<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">,</span> b<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Boolean</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><p>Because we provide a function that determines if two values are equal, we also get a function determining if two
+values are not equal for free.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">object</span> <span style="color:#a6e22e">Eq</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">def</span> neqv<span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">](</span>a<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">,</span> b<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">)(</span><span style="color:#66d9ef">implicit</span> eq<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Eq</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Boolean</span> <span style="color:#f92672">=</span> <span style="color:#f92672">!</span>eq<span style="color:#f92672">.</span>eqv<span style="color:#f92672">(</span>a<span style="color:#f92672">,</span> b<span style="color:#f92672">)</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><p>For implementing <code>neqv</code> I&rsquo;ve created a companion class which takes an implicit <code>Eq</code> instance. The <code>neqv</code> method can
+also be defined in the <code>Eq</code> trait itself.</p>
+<p>Then in our library, we can use our type-safe <code>Eq</code> implementation instead of the <code>==</code> which can vary in accuracy
+depending on type.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">def</span> combineIfNotEqual<span style="color:#f92672">(</span>a<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">,</span> b<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">,</span> otherwise<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">)(</span><span style="color:#66d9ef">implicit</span> eq<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Eq</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">],</span> semigroup<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Semigroup</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span> <span style="color:#f92672">=</span>
+    <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span><span style="color:#a6e22e">Eq</span><span style="color:#f92672">.</span>neqv<span style="color:#f92672">(</span>a<span style="color:#f92672">,</span> b<span style="color:#f92672">))</span> semigroup<span style="color:#f92672">.</span>combine<span style="color:#f92672">(</span>a<span style="color:#f92672">,</span> b<span style="color:#f92672">)</span>
+    <span style="color:#66d9ef">else</span> otherwise
+</code></pre></div><h4 id="show">Show<a href="#show" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p><code>Show</code> provides a method to get an explicit function for turning a value into a <code>String</code> type.  This is very helpful
+when we want to print the state of a complex object to the console without having to override any existing toString
+method directly on the type implementation.  Also, when a function wants to print the value of a generic type to the
+console, it can use its <code>Show</code> implementation instead of relying on the built-in <code>toString</code> method to be correct. Often,
+the default <code>toString</code> method will print out garbage, expecially for complex class instances in the JVM.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">trait</span> <span style="color:#a6e22e">Show</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">def</span> show<span style="color:#f92672">(</span>value<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">String</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><p>Then, when we want to do some debugging from a function we write, we can require an explicit <code>Show</code> implementation
+which the function caller provides.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">implicit</span> <span style="color:#66d9ef">val</span> showInt<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Show</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>value<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#e6db74">s&#34;Integer(</span><span style="color:#e6db74">$value</span><span style="color:#e6db74">)&#34;</span> <span style="color:#75715e">// ex. Integer(5)
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">def</span> print<span style="color:#f92672">(</span>value<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">)(</span><span style="color:#66d9ef">implicit</span> show<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Show</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Unit</span> <span style="color:#f92672">=</span> println<span style="color:#f92672">(</span>show<span style="color:#f92672">.</span>show<span style="color:#f92672">(</span>value<span style="color:#f92672">))</span>
+
+print<span style="color:#f92672">(</span><span style="color:#ae81ff">500</span><span style="color:#f92672">)</span> <span style="color:#75715e">// Integer(500)
+</span></code></pre></div><p>For a more complex object, this can save us a lot of headache.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PersonWithRandomAge</span><span style="color:#f92672">(</span><span style="color:#66d9ef">val</span> first<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">,</span> <span style="color:#66d9ef">val</span> last<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">val</span> random <span style="color:#66d9ef">=</span> scala<span style="color:#f92672">.</span>util<span style="color:#f92672">.</span>random
+
+    <span style="color:#66d9ef">val</span> age <span style="color:#66d9ef">=</span> random<span style="color:#f92672">.</span>nextInt<span style="color:#f92672">(</span><span style="color:#ae81ff">100</span><span style="color:#f92672">)</span>
+<span style="color:#f92672">}</span>
+
+<span style="color:#66d9ef">implicit</span> <span style="color:#66d9ef">val</span> showPerson <span style="color:#66d9ef">=</span> <span style="color:#f92672">(</span>person<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">PersonWithRandomAge</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span>
+    <span style="color:#e6db74">s&#34;Person(name: </span><span style="color:#e6db74">${</span>person<span style="color:#f92672">.</span>last<span style="color:#e6db74">}</span><span style="color:#e6db74">, </span><span style="color:#e6db74">${</span>person<span style="color:#f92672">.</span>first<span style="color:#e6db74">}</span><span style="color:#e6db74">, age: </span><span style="color:#e6db74">${</span>person<span style="color:#f92672">.</span>age<span style="color:#e6db74">}</span><span style="color:#e6db74">)&#34;</span>
+</code></pre></div><p>Even better, with some help from the Scala Cats library, we can use this implementation when we have a collection of
+people without any extra work. Just be sure to implement the <code>cats.Show</code> trait instead of our custom <code>Show</code> trait.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">import</span> cats.implicits._
+
+<span style="color:#66d9ef">val</span> people <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#66d9ef">new</span> <span style="color:#a6e22e">PersonWithRandomAge</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Kup&#34;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34; Quickdew&#34;</span><span style="color:#f92672">),</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">PersonWithRandomAge</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Hellweed&#34;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;Underhill&#34;</span><span style="color:#f92672">))</span>
+
+people<span style="color:#f92672">.</span>show <span style="color:#75715e">// List(Person(name: Quickdew, Kup, age: 70), Person(name: Underhill, Hellweed, age: 69))
+</span></code></pre></div><h4 id="monoid">Monoid<a href="#monoid" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>The <code>Monoid</code> typeclass is an extension of <code>Semigroup</code> with an additional method <code>empty</code> that returns a value
+representing the default state of non-existence.  For integers, this value would be <code>0</code> or for strings <code>&quot;&quot;</code>.</p>
+<p>We will expand on our previous <code>Semigroup</code> trait to implement <code>Monoid</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">trait</span> <span style="color:#a6e22e">Semigroup</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">def</span> combine<span style="color:#f92672">(</span>a<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">,</span> b<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span>
+<span style="color:#f92672">}</span>
+
+<span style="color:#66d9ef">trait</span> <span style="color:#a6e22e">Monoid</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">]</span> <span style="color:#a6e22e">extends</span> <span style="color:#a6e22e">Semigroup</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">def</span> empty<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">T</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><p>It is often helpful to extend the functionality of one typeclass with that of another.</p>
+<p>Now, any implementation of <code>Monoid</code> is also allowed where a <code>Semigroup</code> is required.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">implicit</span> <span style="color:#66d9ef">val</span> intAdditionMonoid<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Monoid</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">Monoid</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">def</span> combine<span style="color:#f92672">(</span>a<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">,</span> b<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span> <span style="color:#f92672">=</span> a <span style="color:#f92672">+</span> b
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">def</span> empty<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><p>This implementation comes in handy when we want to fold over a collection of values.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">def</span> combineAll<span style="color:#f92672">(</span>values<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">])(</span><span style="color:#66d9ef">implicit</span> monoid<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Monoid</span><span style="color:#f92672">[</span><span style="color:#66d9ef">T</span><span style="color:#f92672">])</span> <span style="color:#66d9ef">=</span>
+    values<span style="color:#f92672">.</span>foldLeft<span style="color:#f92672">(</span>monoid<span style="color:#f92672">.</span>empty<span style="color:#f92672">)(</span>monoid<span style="color:#f92672">.</span>combine<span style="color:#f92672">)</span>
+
+combineAll<span style="color:#f92672">(</span><span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">3</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">4</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">5</span><span style="color:#f92672">))</span> <span style="color:#75715e">// 15
+</span></code></pre></div><h4 id="functor">Functor<a href="#functor" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>The <code>Functor</code> typeclass defines a <code>map</code> method from type <code>A</code> to type <code>B</code> so that a <code>Functor[A]</code> can be mapped to a
+<code>Functor[B]</code> type.  This is loosely related to the mathematical definition of a <code>Functor</code> <code>F</code> which defines a
+mapping from a set <code>A</code> to a set <code>B</code> such that <code>F[idA] -&gt; F[idB]</code> and <code>F[g * f] -&gt; F[g] * F[f]</code>.  In this definition,
+the identity element <code>idA</code> depends on the identity of the the category (<code>0</code> for integer addtion and <code>1</code> for integer
+multiplication) and <code>g</code> and <code>f</code> are functions applied to the element contained in <code>F</code>.  For example, if <code>g(x) = x + 1</code>
+and <code>f(x) = x + 5</code>, then <code>F[g(f(3))]</code> must be equal to <code>F[g(3)] + F[f(3)]</code>.</p>
+<p>For the typeclass definition of <code>Functor</code>, we are going to take advantage of Scala&rsquo;s ability to define generic type
+arguments with a number of &ldquo;holes&rdquo;.  For example, <code>Functor[F[_]]</code> defines a <code>Functor</code> type for a generic argument named
+<code>F</code> that itself has a single type argument.  In most languages, this restriction will not be possible, which can make
+defining this <code>Functor</code> type tricky.</p>
+<p>In our example, I will use <code>Option</code> as the <code>Functor</code> argument.  <code>Option</code> in Scala contains a previously defined <code>map</code>
+method, but I will instead show how the implementation works using just <code>Some</code> and <code>None</code> case classes.</p>
+<p>I&rsquo;m also adding an additional <code>Functor</code> object with a summoner function which pulls the given implicit functor out
+of the <code>implicit</code> scope.  This will let us call the <code>Functor</code> map function directly.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">trait</span> <span style="color:#a6e22e">Functor</span><span style="color:#f92672">[</span><span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">_</span><span style="color:#f92672">]]</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">def</span> map<span style="color:#f92672">[</span><span style="color:#66d9ef">A</span>, <span style="color:#66d9ef">B</span><span style="color:#f92672">](</span>functorA<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">],</span> mapping<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">A</span> <span style="color:#f92672">=&gt;</span> B<span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">B</span><span style="color:#f92672">]</span>
+<span style="color:#f92672">}</span>
+
+<span style="color:#66d9ef">object</span> <span style="color:#a6e22e">Functor</span> <span style="color:#f92672">{</span>
+    <span style="color:#75715e">// summoner function
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">def</span> apply<span style="color:#f92672">[</span><span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">_</span><span style="color:#f92672">]](</span><span style="color:#66d9ef">implicit</span> functor<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Functor</span><span style="color:#f92672">[</span><span style="color:#66d9ef">F</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Functor</span><span style="color:#f92672">[</span><span style="color:#66d9ef">F</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> functor
+<span style="color:#f92672">}</span>
+
+<span style="color:#66d9ef">implicit</span> <span style="color:#66d9ef">val</span> optionFunctor<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Functor</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Option</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">Functor</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Option</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">def</span> map<span style="color:#f92672">[</span><span style="color:#66d9ef">A</span>, <span style="color:#66d9ef">B</span><span style="color:#f92672">](</span>functorA<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Option</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">],</span> mapping<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">A</span> <span style="color:#f92672">=&gt;</span> B<span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Option</span><span style="color:#f92672">[</span><span style="color:#66d9ef">B</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> 
+        functorA <span style="color:#66d9ef">match</span> <span style="color:#f92672">{</span>
+            <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">Some</span><span style="color:#f92672">(</span>a<span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">Some</span><span style="color:#f92672">(</span>mapping<span style="color:#f92672">(</span>a<span style="color:#f92672">))</span>
+            <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">None</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">None</span>
+        <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+
+<span style="color:#a6e22e">Functor</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Option</span><span style="color:#f92672">].</span>map<span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span>, <span style="color:#66d9ef">Int</span><span style="color:#f92672">](</span><span style="color:#a6e22e">Some</span><span style="color:#f92672">(</span><span style="color:#ae81ff">50</span><span style="color:#f92672">),</span> x <span style="color:#66d9ef">=&gt;</span> x <span style="color:#f92672">*</span> <span style="color:#ae81ff">10</span><span style="color:#f92672">)</span> <span style="color:#75715e">// Some(500)
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Functor</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Option</span><span style="color:#f92672">].</span>map<span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span>, <span style="color:#66d9ef">Int</span><span style="color:#f92672">](</span><span style="color:#a6e22e">None</span><span style="color:#f92672">,</span> x <span style="color:#66d9ef">=&gt;</span> x <span style="color:#f92672">*</span> <span style="color:#ae81ff">10</span><span style="color:#f92672">)</span> <span style="color:#75715e">// None
+</span></code></pre></div><h4 id="monad">Monad<a href="#monad" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>The <code>Monad</code> typeclass is an extension on the <code>Functor</code> typeclass which provides a <code>flatten</code> function.  The <code>flatten</code>
+function squashes a value of type <code>F[F[_]]</code> into <code>F[_]</code>.  Once defined, we can combine <code>flatten</code> and <code>map</code> to create
+<code>flatMap</code>, which works like <code>map</code> except it takes in a function of type <code>A =&gt; F[B]</code> instead of <code>A =&gt; B</code> and returns
+the type <code>F[B]</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Scala" data-lang="Scala"><span style="color:#66d9ef">trait</span> <span style="color:#a6e22e">Monad</span><span style="color:#f92672">[</span><span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">_</span><span style="color:#f92672">]]</span> <span style="color:#a6e22e">extends</span> <span style="color:#a6e22e">Functor</span><span style="color:#f92672">[</span><span style="color:#66d9ef">F</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span>
+  <span style="color:#66d9ef">def</span> flatten<span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">](</span>nestedFunctorA<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">]])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">]</span>
+  
+  <span style="color:#66d9ef">def</span> flatMap<span style="color:#f92672">[</span><span style="color:#66d9ef">A</span>, <span style="color:#66d9ef">B</span><span style="color:#f92672">](</span>functorA<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">],</span> mapping<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">A</span> <span style="color:#f92672">=&gt;</span> F<span style="color:#f92672">[</span><span style="color:#66d9ef">B</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">B</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> flatten<span style="color:#f92672">(</span>map<span style="color:#f92672">(</span>functorA<span style="color:#f92672">,</span> mapping<span style="color:#f92672">))</span>
+<span style="color:#f92672">}</span>
+
+<span style="color:#66d9ef">implicit</span> <span style="color:#66d9ef">val</span> listMonad<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Monad</span><span style="color:#f92672">[</span><span style="color:#66d9ef">List</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">Monad</span><span style="color:#f92672">[</span><span style="color:#66d9ef">List</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span>
+  <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">def</span> map<span style="color:#f92672">[</span><span style="color:#66d9ef">A</span>, <span style="color:#66d9ef">B</span><span style="color:#f92672">](</span>functorA<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">],</span> mapping<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">A</span> <span style="color:#f92672">=&gt;</span> B<span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">B</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> functorA <span style="color:#66d9ef">match</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">case</span> head <span style="color:#66d9ef">:</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">tail</span> <span style="color:#f92672">=&gt;</span> mapping<span style="color:#f92672">(</span>head<span style="color:#f92672">)</span> <span style="color:#66d9ef">:</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">map</span><span style="color:#f92672">(</span><span style="color:#66d9ef">tail</span><span style="color:#f92672">,</span> <span style="color:#66d9ef">mapping</span><span style="color:#f92672">)</span>
+    <span style="color:#66d9ef">case</span> <span style="color:#66d9ef">_</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">()</span>
+  <span style="color:#f92672">}</span>
+  
+  <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">def</span> flatten<span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">](</span>nestedFunctorA<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">]])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> nestedFunctorA <span style="color:#66d9ef">match</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">case</span> head <span style="color:#66d9ef">:</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">tail</span> <span style="color:#f92672">=&gt;</span> head <span style="color:#f92672">++</span> flatten<span style="color:#f92672">(</span>tail<span style="color:#f92672">)</span>
+    <span style="color:#66d9ef">case</span> <span style="color:#66d9ef">_</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">()</span>
+  <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+
+<span style="color:#66d9ef">object</span> <span style="color:#a6e22e">Monad</span> <span style="color:#f92672">{</span>
+  <span style="color:#75715e">// summoner function
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">def</span> apply<span style="color:#f92672">[</span><span style="color:#66d9ef">F</span><span style="color:#f92672">[</span><span style="color:#66d9ef">_</span><span style="color:#f92672">]](</span><span style="color:#66d9ef">implicit</span> monad<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Monad</span><span style="color:#f92672">[</span><span style="color:#66d9ef">F</span><span style="color:#f92672">])</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Monad</span><span style="color:#f92672">[</span><span style="color:#66d9ef">F</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> monad
+<span style="color:#f92672">}</span>
+
+<span style="color:#a6e22e">Monad</span><span style="color:#f92672">[</span><span style="color:#66d9ef">List</span><span style="color:#f92672">].</span>map<span style="color:#f92672">(</span><span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">100</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">5</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">22</span><span style="color:#f92672">),</span> <span style="color:#f92672">(</span>x<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> x <span style="color:#f92672">*</span> <span style="color:#ae81ff">5</span><span style="color:#f92672">)</span> <span style="color:#75715e">// List(500, 25, 110)
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Monad</span><span style="color:#f92672">[</span><span style="color:#66d9ef">List</span><span style="color:#f92672">].</span>flatten<span style="color:#f92672">(</span><span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">3</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">4</span><span style="color:#f92672">),</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">9</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">18</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">)))</span> <span style="color:#75715e">// List(1, 3, 4, 9, 18, 0)
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Monad</span><span style="color:#f92672">[</span><span style="color:#66d9ef">List</span><span style="color:#f92672">].</span>flatMap<span style="color:#f92672">(</span><span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">3</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">4</span><span style="color:#f92672">),</span> <span style="color:#f92672">(</span>x<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span>x <span style="color:#f92672">%</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">,</span> x <span style="color:#f92672">%</span> <span style="color:#ae81ff">3</span><span style="color:#f92672">))</span> <span style="color:#75715e">// List(1, 1, 0, 2, 1, 0, 0, 1)
+</span></code></pre></div><h2 id="conclusion">Conclusion<a href="#conclusion" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>Typeclasses are a flexible and functional approach to abstraction and generic programming.  They are type-safe, modular,
+and simple to test and relieve many headaches software developers encounter with common behaviors on types.</p>
+
+      </div></div>
+
+  
+  
+<div class="pagination">
+    <div class="pagination__title">
+        <span class="pagination__title-h">Read other posts</span>
+        <hr />
+    </div>
+    <div class="pagination__buttons">
+        
+        
+        <span class="button next">
+            <a href="https://brandenvennes.com/posts/python-html/">
+                <span class="button__text">Building an HTML Library with Python</span>
+                <span class="button__icon">→</span>
+            </a>
+        </span>
+        
+    </div>
+</div>
+
+  
+
+  
+
+</div>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2021 Powered by <a href="http://gohugo.io">Hugo</a></span>
+    
+        <span>:: Theme made by <a href="https://twitter.com/panr">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+<script src="https://brandenvennes.com/assets/main.js"></script>
+<script src="https://brandenvennes.com/assets/prism.js"></script>
+
+
+
+
+
+
+
+  
+</div>
+
+</body>
+</html>

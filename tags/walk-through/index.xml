@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Walk-through on Branden Vennes</title>
+    <link>https://brandenvennes.com/tags/walk-through/</link>
+    <description>Recent content in Walk-through on Branden Vennes</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 09 Mar 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://brandenvennes.com/tags/walk-through/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Building an HTML Library with Python</title>
+      <link>https://brandenvennes.com/posts/python-html/</link>
+      <pubDate>Mon, 09 Mar 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://brandenvennes.com/posts/python-html/</guid>
+      <description>In this tutorial I will be walking through the development of my HTML builder Python package.
+The completed package is available at bvennes/html_builder on GitHub.
+Creating a Clientside Project With Python The purpose of the HTML builder is to programmatically create an HTML file using Python. In the future, however, I would like to make SCSS and JavaScript builders as well so that the entirety of a web application could be built using Python.</description>
+      <content>&lt;p&gt;In this tutorial I will be walking through the development of my HTML builder Python package.&lt;/p&gt;
+&lt;p&gt;The completed package is available at &lt;a href=&#34;https://github.com/b-vennes/html_builder&#34;&gt;bvennes/html_builder&lt;/a&gt; on GitHub.&lt;/p&gt;
+&lt;h2 id=&#34;creating-a-clientside-project-with-python&#34;&gt;Creating a Clientside Project With Python&lt;/h2&gt;
+&lt;p&gt;The purpose of the HTML builder is to programmatically create an HTML file using Python. In the future, however, I would like to make SCSS and JavaScript builders as well so that the entirety of a web application could be built using Python.&lt;/p&gt;
+&lt;p&gt;HTML is a good place to start because the structure of an HTML file is fairly simple. HTML tags look like &lt;code&gt;&amp;lt;tag-name class=&amp;quot;class-1 class-2&amp;quot;&amp;gt;&amp;lt;/tag-name&amp;gt;&lt;/code&gt; and are nested to build out component hierarchies.&lt;/p&gt;
+&lt;p&gt;An HTML tag can be broken down into 4 major components:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;name of the tag&lt;/li&gt;
+&lt;li&gt;list of classes for the tag&lt;/li&gt;
+&lt;li&gt;additional attributes like &lt;code&gt;onclick&lt;/code&gt; or &lt;code&gt;style&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;child tags or text&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;html-python-class&#34;&gt;Html Python Class&lt;/h2&gt;
+&lt;p&gt;To create an HTML tag in Python, I created a basic object called &lt;code&gt;Html&lt;/code&gt; holding access to the HTML tag&amp;rsquo;s name, class names, and attributes like &lt;code&gt;onclick: doSomething()&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;It would also be possible for the classes list to be given as an attribute, since &lt;code&gt;class&lt;/code&gt; is technically just an attribute, but this is a good opportunity to make use of Python&amp;rsquo;s &lt;code&gt;*args&lt;/code&gt; functionality.&lt;/p&gt;
+&lt;p&gt;Here is what the initial code looked like for the Html object:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Html&lt;/span&gt;:
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; __init__(self, tag_name, &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;class_names, &lt;span style=&#34;color:#f92672&#34;&gt;**&lt;/span&gt;attributes):
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Initializes a new html tag.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; tag_name
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; list(class_names)
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;attributes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; attributes
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; []
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;render-method&#34;&gt;Render Method&lt;/h2&gt;
+&lt;p&gt;In order to output the Html object as a string, I added a &lt;code&gt;render&lt;/code&gt; method.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;render&lt;/span&gt;(self):
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Renders the html tag as a string.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+        html &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;__len__() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;:
+            classes_list &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;join(self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names)
+            html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; class=&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;classes_list&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#39;&lt;/span&gt;
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; key, value &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;attributes&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;items():
+            html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;key&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;=&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;value&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#39;&lt;/span&gt;
+
+        html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;gt;&amp;lt;/&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;gt;&amp;#39;&lt;/span&gt;
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; html
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To render the HTML tag as a string, we maintain an html element that begins with &lt;code&gt;&amp;lt;self.name&lt;/code&gt;, add the classes as a list separated by a space, add the sets of attribute key/value pairs, and finally close it off with &lt;code&gt;&amp;gt;&amp;lt;/self.name&amp;gt;&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;With both the &lt;code&gt;__init__&lt;/code&gt; and &lt;code&gt;render&lt;/code&gt; methods completed, the &lt;code&gt;Html&lt;/code&gt; class looks like:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Html&lt;/span&gt;:
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; __init__(self, tag_name, &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;class_names, &lt;span style=&#34;color:#f92672&#34;&gt;**&lt;/span&gt;attributes):
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Initializes a new html tag.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; tag_name
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; list(class_names)
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;attributes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; attributes
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; []
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;render&lt;/span&gt;(self):
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Renders the html tag as a string.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+        html &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;__len__() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;:
+            classes_list &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;join(self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names)
+            html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; class=&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;classes_list&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#39;&lt;/span&gt;
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; key, value &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;attributes&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;items():
+            html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;key&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;=&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;value&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#39;&lt;/span&gt;
+
+        html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;gt;&amp;lt;/&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;gt;&amp;#39;&lt;/span&gt;
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; html
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;html-class-testing&#34;&gt;Html Class Testing&lt;/h2&gt;
+&lt;p&gt;Before testing this class out, let&amp;rsquo;s setup the full &lt;code&gt;html_builder&lt;/code&gt; Python package.&lt;/p&gt;
+&lt;p&gt;First, create a new directory called &lt;em&gt;html_builder&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Add a blank file within this directory called __init__.py&lt;/p&gt;
+&lt;p&gt;Add a subdirectory to &lt;em&gt;html_builder&lt;/em&gt; also called &lt;em&gt;html_builder&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Within the &lt;em&gt;html_builder&lt;/em&gt; subdirectory, add a file named &lt;em&gt;html.py&lt;/em&gt; and copy the &lt;code&gt;Html&lt;/code&gt; class from above.&lt;/p&gt;
+&lt;p&gt;Then, create a test script in the same folder as the top-level &lt;em&gt;html_builder&lt;/em&gt; directory named &lt;em&gt;html_test.py&lt;/em&gt;.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# html_test.py&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; html_builder.html &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; Html
+
+button &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Html(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;button&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;class-1&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;class-2&amp;#39;&lt;/span&gt;, onclick&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;alert(&amp;#39;Hello world!&amp;#39;)&amp;#34;&lt;/span&gt;)
+
+print(button&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;render())
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The output of this Python script should be &lt;code&gt;&amp;lt;button class=&amp;quot;class-1 class-2&amp;quot; onclick=&amp;quot;alert(&#39;Hello world!&#39;)&amp;quot;&amp;gt;&amp;lt;/button&amp;gt;&lt;/code&gt;. Let&amp;rsquo;s copy this to a file named &lt;em&gt;button.html&lt;/em&gt; and open it in a web browser. We should see a tiny button with no text. If we click on it, the window alerts us with the message &lt;code&gt;Hello world!&lt;/code&gt;. That&amp;rsquo;s a promising start!&lt;/p&gt;
+&lt;p&gt;But users will want to be able to add text to their button. In order to do this, we want our button to be able to contain some child elements, like this:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-html&#34; data-lang=&#34;html&#34;&gt;&amp;lt;&lt;span style=&#34;color:#f92672&#34;&gt;button&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;class-1 class-2&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;onclick&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;alert(&amp;#39;Hello world!&amp;#39;)&amp;#34;&lt;/span&gt;&amp;gt;
+    Click me!
+&amp;lt;/&lt;span style=&#34;color:#f92672&#34;&gt;button&lt;/span&gt;&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;html-children&#34;&gt;Html Children&lt;/h2&gt;
+&lt;p&gt;Let&amp;rsquo;s add a child element to our button.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;button &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Html(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;button&amp;#39;&lt;/span&gt;, onclick&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;alert(&amp;#39;Hello world!&amp;#39;)&amp;#34;&lt;/span&gt;)
+button&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; [&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Click me!&amp;#39;&lt;/span&gt;]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;However, our render method isn&amp;rsquo;t rendering any of our children, so let&amp;rsquo;s fix that by adding a method called &lt;code&gt;render_children()&lt;/code&gt;. We will make it a private method so that we can encapsulate any additional logic that might occur while rendering the tag&amp;rsquo;s children. To make the method private, add &lt;code&gt;__&lt;/code&gt; before the method name.&lt;/p&gt;
+&lt;p&gt;This is also a good time to make the HTML format nicely when printed using newline characters and spaces.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;__render_children&lt;/span&gt;(self):
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Renders the tag&amp;#39;s children&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+    rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; child &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children:
+        rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    &amp;#39;&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; type(child) &lt;span style=&#34;color:#f92672&#34;&gt;is&lt;/span&gt; Html:
+            rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; child&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;render()&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;replace(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    &amp;#39;&lt;/span&gt;)
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt;:
+            rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; child
+    
+    rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;
+    
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; rendered_children
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Let&amp;rsquo;s also modify the &lt;code&gt;render&lt;/code&gt; to use the new private method.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;render&lt;/span&gt;(self):
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Renders the html tag as a string.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+    html &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;__len__() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;:
+        classes_list &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;join(self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names)
+        html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; class=&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;classes_list&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#39;&lt;/span&gt;
+        
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; key, value &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;attributes&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;items():
+        html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;key&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;=&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;value&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#39;&lt;/span&gt;
+
+    rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;__render_children()
+
+    html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;rendered_children&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;gt;&amp;#39;&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; html
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The &lt;code&gt;Html&lt;/code&gt; class should now look like this:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# html.py&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Html&lt;/span&gt;:
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; __init__(self, tag_name, &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;class_names, &lt;span style=&#34;color:#f92672&#34;&gt;**&lt;/span&gt;attributes):
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Initializes a new html tag.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; tag_name
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; list(class_names)
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;attributes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; attributes
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; []
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;render&lt;/span&gt;(self):
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Renders the html tag as a string.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+        html &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;__len__() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;:
+            classes_list &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;join(self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names)
+            html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; class=&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;classes_list&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#39;&lt;/span&gt;
+            
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; key, value &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;attributes&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;items():
+            html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;key&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;=&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;value&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#39;&lt;/span&gt;
+
+        rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;__render_children()
+
+        html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;rendered_children&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;gt;&amp;#39;&lt;/span&gt;
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; html
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;__render_children&lt;/span&gt;(self):
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Renders the tag&amp;#39;s children&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+        rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;
+
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; child &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children:
+            rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    &amp;#39;&lt;/span&gt;
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; type(child) &lt;span style=&#34;color:#f92672&#34;&gt;is&lt;/span&gt; Html:
+                rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; child&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;render()&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;replace(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    &amp;#39;&lt;/span&gt;)
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt;:
+                rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; child
+        
+        rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;
+        
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; rendered_children
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Looks good! Now we&amp;rsquo;ll want to update our test script to make use of the new functionality. I&amp;rsquo;ve added &lt;code&gt;div&lt;/code&gt; and &lt;code&gt;title&lt;/code&gt; elements to test out nested HTML.&lt;/p&gt;
+&lt;h2 id=&#34;testing-child-html-tags&#34;&gt;Testing Child HTML Tags&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# html_test.py&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; html_builder.html_builder.html &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; Html
+
+div &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Html(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;div&amp;#39;&lt;/span&gt;)
+
+title &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Html(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;h1&amp;#39;&lt;/span&gt;)
+
+button &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Html(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;button&amp;#39;&lt;/span&gt;, onclick&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;alert(&amp;#39;Hello world!&amp;#39;)&amp;#34;&lt;/span&gt;)
+
+button&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; [&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Click me!&amp;#39;&lt;/span&gt;]
+title&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; [&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;HTML Builder Test&amp;#39;&lt;/span&gt;]
+div&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; [title, button]
+
+print(div&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;render())
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;After running the &lt;em&gt;html_test.py&lt;/em&gt; script we should see the output&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-html&#34; data-lang=&#34;html&#34;&gt;&amp;lt;&lt;span style=&#34;color:#f92672&#34;&gt;div&lt;/span&gt;&amp;gt;
+    &amp;lt;&lt;span style=&#34;color:#f92672&#34;&gt;h1&lt;/span&gt;&amp;gt;
+        HTML Builder Test
+    &amp;lt;/&lt;span style=&#34;color:#f92672&#34;&gt;h1&lt;/span&gt;&amp;gt;
+    &amp;lt;&lt;span style=&#34;color:#f92672&#34;&gt;button&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;onclick&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;alert(&amp;#39;Hello world!&amp;#39;)&amp;#34;&lt;/span&gt;&amp;gt;
+        Click me!
+    &amp;lt;/&lt;span style=&#34;color:#f92672&#34;&gt;button&lt;/span&gt;&amp;gt;
+&amp;lt;/&lt;span style=&#34;color:#f92672&#34;&gt;div&lt;/span&gt;&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;After copying the output to &lt;em&gt;test.html&lt;/em&gt; and reloading the browser, it should show our title and a button that says &amp;lsquo;Click me!&amp;rsquo;.&lt;/p&gt;
+&lt;h2 id=&#34;rendering-to-an-html-file&#34;&gt;Rendering to an HTML File&lt;/h2&gt;
+&lt;p&gt;At this point, our builder is just about done. But it might be helpful for our users to render HTML directly into a file. So I&amp;rsquo;ve added an &lt;code&gt;output_file&lt;/code&gt; parameter to the &lt;code&gt;render&lt;/code&gt; method so that users can specify a path where the rendered HTML should go. Before returning the HTML as a string, I&amp;rsquo;ve also added a section for opening the file if it is given, writing to it, and closing it.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;render&lt;/span&gt;(self, output_file_path&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;):
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&amp;#34;Renders the html tag as a string.&amp;#34;&amp;#34;&amp;#34;&lt;/span&gt;
+    html &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;__len__() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;:
+        classes_list &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; &amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;join(self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;class_names)
+        html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; class=&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;classes_list&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#39;&lt;/span&gt;
+        
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; key, value &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;attributes&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;items():
+        html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39; &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;key&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;=&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;value&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#39;&lt;/span&gt;
+
+    rendered_children &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;__render_children()
+
+    html &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;rendered_children&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;name&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;gt;&amp;#39;&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; output_file_path &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;:
+        output_file &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; open(output_file_path, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;w&amp;#39;&lt;/span&gt;)
+        output_file&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;write(html)
+        output_file&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;close()
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; html
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To verify this behavior works correctly, I&amp;rsquo;ve specified the output file in the test script.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; html_builder.html_builder.html &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; Html
+
+div &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Html(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;div&amp;#39;&lt;/span&gt;)
+
+title &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Html(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;h1&amp;#39;&lt;/span&gt;)
+
+button &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Html(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;button&amp;#39;&lt;/span&gt;, onclick&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;alert(&amp;#39;Hello world!&amp;#39;)&amp;#34;&lt;/span&gt;)
+
+button&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; [&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Click me!&amp;#39;&lt;/span&gt;]
+title&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; [&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;HTML Builder Test&amp;#39;&lt;/span&gt;]
+div&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;children &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; [title, button]
+
+print(div&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;render(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;./test.html&amp;#39;&lt;/span&gt;))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now when we run the script, the HTML is printed to both the output terminal and the &lt;em&gt;test.html&lt;/em&gt; file. Neat!&lt;/p&gt;
+</content>
+    </item>
+    
+  </channel>
+</rss>

@@ -3,12 +3,36 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://brandenvennes.com/</loc>
-    <lastmod>2020-03-09T00:00:00+00:00</lastmod>
+    <lastmod>2021-06-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://brandenvennes.com/tags/functional-programming/</loc>
+    <lastmod>2021-06-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://brandenvennes.com/posts/</loc>
+    <lastmod>2021-06-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://brandenvennes.com/tags/scala/</loc>
+    <lastmod>2021-06-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://brandenvennes.com/tags/software-architecture/</loc>
+    <lastmod>2021-06-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://brandenvennes.com/tags/</loc>
+    <lastmod>2021-06-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://brandenvennes.com/posts/typeclasses/</loc>
+    <lastmod>2021-06-22T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://brandenvennes.com/posts/python-html/</loc>
     <lastmod>2020-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://brandenvennes.com/posts/</loc>
+    <loc>https://brandenvennes.com/tags/html/</loc>
+    <lastmod>2020-03-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://brandenvennes.com/tags/python/</loc>
+    <lastmod>2020-03-09T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://brandenvennes.com/tags/walk-through/</loc>
     <lastmod>2020-03-09T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://brandenvennes.com/about/</loc>
@@ -16,7 +40,5 @@
     <loc>https://brandenvennes.com/categories/</loc>
   </url><url>
     <loc>https://brandenvennes.com/resume/</loc>
-  </url><url>
-    <loc>https://brandenvennes.com/tags/</loc>
   </url>
 </urlset>
